@@ -1,5 +1,6 @@
 import json
 
+from django.db.models.functions import Lower
 from django.shortcuts import render
 from django.http import Http404
 from django.views import View
@@ -18,7 +19,19 @@ class Books(APIView):
 
     def get(self, request):
         """ Handles get requests """
-        books = Book.objects.all()
+        query_params = request.GET.dict()
+        params = ["level", "tag", "uploader", "code"]
+        filters = {}
+        for parameter in params:
+            if parameter in query_params.keys():
+                if parameter == "level" or parameter == "uploader":
+                    filters[parameter] = int(query_params[parameter])
+                else:
+                    filters[parameter] = query_params[parameter]
+        books = Book.objects.filter(**filters).order_by(
+            Lower("session").desc(),
+            Lower("code").asc()
+        )
         serializer = BookSerializer(books, many=True)
         return Response(serializer.data)
 
@@ -52,7 +65,7 @@ class BookDetail(APIView):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors)
-    
+
     @csrf_exempt
     def delete(self, request, pk):
         """ Handles delete requests """
@@ -89,7 +102,7 @@ class UploaderDetail(APIView):
         uploader = Uploader.objects.get(pk=pk)
         serializer = UploaderSerializer(uploader)
         return Response(serializer.data)
-    
+
     @csrf_exempt
     def put(self, request, pk):
         """ Handles put requests """
@@ -100,7 +113,7 @@ class UploaderDetail(APIView):
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors)
-    
+
     @csrf_exempt
     def delete(self, request, pk):
         """ Handles delete requests """

@@ -101,7 +101,7 @@ class Book(models.Model):
         on_delete=models.SET_DEFAULT,
         related_name="books",
         help_text="""
-            The tag for the book, usually the course code or GEN (general)
+            The tag for the book, the course code letters or GEN (general)
         """
     )
 
@@ -126,6 +126,7 @@ class Book(models.Model):
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
+        related_name="books",
         help_text="Foreign key to the course codes"
     )
 
@@ -174,6 +175,8 @@ class Book(models.Model):
     )
 
     parents = models.JSONField(
+        null=True,
+        blank=True,
         help_text="The parent drive id's of the book"
     )
 
