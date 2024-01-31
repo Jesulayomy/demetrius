@@ -29,6 +29,30 @@ def session_validator(value: int):
         raise ValidationError("Session must be between 1990 and current year")
 
 
+class Folder(models.Model):
+    """ Representation of the google drive filesystem """
+    name = models.CharField(
+        max_length=64,
+        primary_key=True,
+        help_text="The name of the folder"
+    )
+    id = models.CharField(
+        max_length=64,
+        help_text="The drive id of the folder"
+    )
+    parent = models.ForeignKey(
+        'self',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="children",
+        help_text="The parent folder of this folder"
+    )
+
+    def __str__(self):
+        return self.name
+
+
 class Uploader(models.Model):
     """ Table for the uploaders of the books """
     username = models.CharField(
@@ -36,7 +60,6 @@ class Uploader(models.Model):
         max_length=64,
         help_text="The username of the uploader"
     )
-
     email = models.EmailField(
         null=True,
         blank=True,
@@ -58,7 +81,6 @@ class Tag(models.Model):
             (general), used for searching or filtering
         """
     )
-
     full_name = models.CharField(
         max_length=128,
         null=True,
@@ -77,6 +99,12 @@ class Code(models.Model):
         max_length=8,
         help_text="The course code for this book (i.e. ELE 102)"
     )
+    course = models.CharField(
+        null=True,
+        blank=True,
+        max_length=128,
+        help_text="The course this book is required for (i.e. Power Systems)"
+    )
 
     def __str__(self) -> str:
         return self.code
@@ -84,7 +112,6 @@ class Code(models.Model):
 
 class Book(models.Model):
     """ Represents a book in the database """
-
     level = models.IntegerField(
         choices=LEVELS,
         help_text="The level this book is required for, use 0 if more than one"
@@ -112,13 +139,6 @@ class Book(models.Model):
             cover or lecture note (i.e Engineering Mathematics,
             First Order Differential Equations, Note 6)
         """
-    )
-
-    course = models.CharField(
-        null=True,
-        blank=True,
-        max_length=128,
-        help_text="The course this book is required for (i.e. Power Systems)"
     )
 
     code = models.ForeignKey(
