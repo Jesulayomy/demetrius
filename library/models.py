@@ -33,15 +33,14 @@ class Folder(models.Model):
     """ Representation of the google drive filesystem """
     name = models.CharField(
         max_length=64,
-        primary_key=True,
         help_text="The name of the folder"
     )
-    id = models.CharField(
+    folder_id = models.CharField(
         max_length=64,
         help_text="The drive id of the folder"
     )
     parent = models.ForeignKey(
-        'self',
+        'Folder',
         null=True,
         blank=True,
         on_delete=models.SET_NULL,
@@ -72,7 +71,10 @@ class Uploader(models.Model):
 
 
 class Tag(models.Model):
-    """ A course representation for the books, used for filtering """
+    """
+        A course representation for the books, i.e ELE, ABE, CSC
+        used for filtering
+    """
     name = models.CharField(
         primary_key=True,
         max_length=3,

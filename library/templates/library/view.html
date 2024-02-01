@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library</title>
+    <style>
+        .container {
+            width: 90%;
+            margin: 0 auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 5px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Books</h1>
+        <table>
+            <thead>
+                <td>Title</td>
+                <td>Code</td>
+                <td>Tag</td>
+                <td>Size</td>
+                <td>Session</td>
+            </thead>
+            {% for book in books %}
+            <tr>
+                <td><a href="{{ book.download }}">{{ book.title }}</a></td>
+                <td>{{ book.code }}</td>
+                <td>{{ book.tag }}</td>
+                <td>{{ book.size }}</td>
+                <td>{{ book.session }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</body>
+</html>

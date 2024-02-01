@@ -27,7 +27,11 @@ COLLEGES = ['COLENG']
 DEPTS = ['ABE', 'CVE', 'ELE', 'MCE', 'MTE', 'GEN']
 LEVELS = ['100', '200', '300', '400', '500', 'TXT']
 COURSES = ['PQS']
-SESSIONS = ['2016', '2017', '2018', '2019', '2020', '2021', '2022', '2023', '2024']
+SESSIONS = [
+    '2016', '2017', '2018',
+    '2019', '2020', '2021',
+    '2022', '2023', '2024'
+]
 
 
 class Manager:
@@ -85,123 +89,170 @@ class Manager:
             )[0]
         except Exception:
             raise Exception('Could not create or find uploader')
+        try:
+            gen_tag = Tag.objects.get_or_create(
+                name='GEN',
+                full_name='General'
+            )[0]
+        except Exception:
+            raise Exception('Could not create or find general tag')
         print(f"Generating DB from Drive by {uploader.username}...")
         for college in COLLEGES:
-            college_folder = self.get_folder_details(college)[0]
-            # Optimize try except
-            if college not in [folder.name for folder in Folder.objects.all()]:
-                col_folder = Folder.objects.create(
-                    name=college_folder['name'],
-                    parent=None,
-                    id=college_folder['id']
-                )
+            data = {}
+            college_drive = self.get_folder_details(college)[0]
             try:
                 college_obj = Folder.objects.get(name=college)
-            except Exception:
-                raise Exception('Could not create or find college')
-            print(f"{college}: ")
-            dept_folders = self.get_folder_details(parents=college_folder['id'])
+            except Folder.DoesNotExist:
+                college_obj = Folder.objects.create(
+                    name=college_drive['name'],
+                    parent=None,
+                    folder_id=college_drive['id']
+                )
+            data['college'] = college_obj.folder_id
+            print(f"{college_obj.name}: ")
+            dept_folders = self.get_folder_details(
+                parents=college_drive['id']
+            )
             for dept in dept_folders:
-                if dept.get('name') not in [folder.name for folder in Folder.objects.all()]:
-                    dept_folder = Folder.objects.create(
-                        name=dept.get('name'),
+                try:
+                    dept_obj = Folder.objects.get(name=dept['name'])
+                except Folder.DoesNotExist:
+                    dept_obj = Folder.objects.create(
+                        name=dept['name'],
                         parent=college_obj,
-                        id=dept.get('id')
-                    )  # Can also say dept folders are tags
-                print(f"  Dept: {dept.get('name')}")
-                try:
-                    tag = Tag.objects.get_or_create(
-                        name=dept.get('name')
-                    )[0]
-                except Exception:
-                    raise Exception('Could not create or find tag')
-                try:
-                    dept_obj = Folder.objects.get(name=dept.get('name'))
-                except Exception:
-                    raise Exception('Could not create or find dept')
-                level_folders = self.get_folder_details(parents=dept.get('id'))
-                for level in level_folders:
-                    if level.get('name') not in [folder.name for folder in Folder.objects.all()]:
-                        level_folder = Folder.objects.create(
+                        folder_id=dept['id']
+                    )
+                data['dept'] = dept_obj.folder_id
+                # Can also say dept folders are tags, hence;
+                tag = Tag.objects.get_or_create(
+                    name=dept.get('name')
+                )[0]
+                print(f" Dept: {dept.get('name')}")
+                level_folders = self.get_folder_details(
+                    parents=dept.get('id')
+                )
+                for level in level_folders:  # Include TXT filters
+                    try:
+                        level_obj = Folder.objects.get(
+                            name=level.get('name'),
+                            parent=dept_obj
+                        )
+                    except Folder.DoesNotExist:
+                        level_obj = Folder.objects.create(
                             name=level.get('name'),
                             parent=dept_obj,
-                            id=level.get('id')
+                            folder_id=level.get('id')
                         )
-                    print(f"    Level: {level.get('name')}")
-                    try:
-                        level_obj = Folder.objects.get(name=level.get('name'))
-                    except Exception:
-                        raise Exception('Could not create or find level')
-                    semester_folders = self.get_folder_details(parents=level.get('id'))
+                    data['level'] = level_obj.folder_id
+                    data['level_name'] = level_obj.name
+                    print(f"  Level: {level.get('name')}")
+                    if level_obj.name == 'TXT':
+                        texts = self.get_files_details(parent=level.get('id'))
+                        for text in texts:
+                            self.create_db_book(
+                                text, data,
+                                gen_tag, None,
+                                uploader
+                            )
+                        continue
+                    semester_folders = self.get_folder_details(
+                        parents=level.get('id')
+                    )
                     for semester in semester_folders:
-                        if semester.get('name') not in [folder.name for folder in Folder.objects.all()]:
-                            semester_folder = Folder.objects.create(
+                        try:
+                            semester_obj = Folder.objects.get(
+                                name=semester.get('name'),
+                                parent=level_obj
+                            )
+                        except Folder.DoesNotExist:
+                            semester_obj = Folder.objects.create(
                                 name=semester.get('name'),
                                 parent=level_obj,
-                                id=semester.get('id')
+                                folder_id=semester.get('id')
                             )
-                        print(f"      Semester: {semester.get('name')}")
-                        try:
-                            semester_obj = Folder.objects.get(name=semester.get('name'))
-                        except Exception:
-                            raise Exception('Could not create or find semester')
-                        session_folders = self.get_folder_details(parents=semester.get('id'))
+                        data['semester'] = semester_obj.folder_id
+                        print(f"   Semester: {semester.get('name')}")
+                        session_folders = self.get_folder_details(
+                            parents=semester.get('id')
+                        )
                         for session in session_folders:
-                            if session.get('name') not in [folder.name for folder in Folder.objects.all()]:
-                                session_folder = Folder.objects.create(
+                            try:
+                                session_obj = Folder.objects.get(
+                                    name=session.get('name'),
+                                    parent=semester_obj
+                                )
+                            except Folder.DoesNotExist:
+                                session_obj = Folder.objects.create(
                                     name=session.get('name'),
                                     parent=semester_obj,
-                                    id=session.get('id')
+                                    folder_id=session.get('id')
                                 )
-                            print(f"        Session: {session.get('name')}")
-                            # Can also say course folders are course codes
-                            try:
-                                session_obj = Folder.objects.get(name=session.get('name'))
-                            except Exception:
-                                raise Exception('Could not create or find session')
-                            course_folders = self.get_folder_details(parents=session.get('id'))
+                            data['session'] = session_obj.folder_id
+                            data['session_name'] = session_obj.name
+                            print(f"    Session: {session.get('name')}")
+                            course_folders = self.get_folder_details(
+                                parents=session.get('id')
+                                )
                             for course in course_folders:  # and PQS
-                                if course.get('name') not in [folder.name for folder in Folder.objects.all()]:
-                                    course_folder = Folder.objects.create(
+                                try:
+                                    course_obj = Folder.objects.get(
+                                        name=course.get('name'),
+                                        parent=session_obj
+                                    )
+                                except Folder.DoesNotExist:
+                                    course_obj = Folder.objects.create(
                                         name=course.get('name'),
                                         parent=session_obj,
-                                        id=course.get('id')
+                                        folder_id=course.get('id')
                                     )
+                                data['course'] = course_obj.folder_id
                                 try:
                                     code = Code.objects.get_or_create(
                                         code=course.get('name')
                                     )[0]
                                 except Exception:
-                                    raise Exception('Could not create or find code')
-                                try:
-                                    course_obj = Folder.objects.get(name=course.get('name'))
-                                except Exception:
-                                    print('Could not create or find course')
-                                print(f"          Course: {course.get('name')}")
-                                book_files = self.get_files_details(parent=course.get('id'))
+                                    raise Exception(
+                                        'Could not create or find code'
+                                    )
+                                print(f"     Course: {course.get('name')}")
+                                book_files = self.get_files_details(
+                                    parent=course.get('id')
+                                )
                                 for book in book_files:
                                     if book.get('name') not in [book.title for book in Book.objects.all()]:
-                                        book_file = Book.objects.create(
-                                            title=book.get('name'),
-                                            parents=[
-                                                college_obj.id,
-                                                dept_obj.id,
-                                                level_obj.id,
-                                                session_obj.id,
-                                                course_obj.id
-                                            ],
-                                            drive_id=book.get('id'),
-                                            download=book.get('webContentLink'),
-                                            size=int(book.get('size')),
-                                            level=level.get('name'),
-                                            session=session.get('name'),
-                                            uploader=uploader,
-                                            tag=tag,
-                                            code=code
+                                        book_file = self.create_db_book(
+                                            book, data,
+                                            tag, code,
+                                            uploader
                                         )
-                                    print(f"            {book.get('name')}", end='')
-                                print('')
         print('Done!')
+
+    def create_db_book(self, book, data, tag, code, uploader):
+        """ Creates new book object """
+        parents = [
+            data.get('college'),
+            data.get('dept'),
+            data.get('level')
+        ]
+        if data.get('level_name') == 'TXT':
+            data['level_name'] = 0
+        else:
+            parents.append(data['session'])
+            parents.append(data['course'])
+        book_file = Book.objects.create(
+            title=book.get('name'),
+            parents=parents,
+            drive_id=book.get('id'),
+            download=book.get('webContentLink'),
+            size=book.get('size', 0),
+            level=int(data['level_name']),
+            session=data.get('sesion_name', 2023),
+            uploader=uploader,
+            tag=tag,
+            code=code
+        )
+        print(f"      {book.get('name')}")
+        return book_file
 
     def get_folder_details(self, name=None, parents=None):
         """
@@ -233,9 +284,60 @@ class Manager:
             q += f" and '{parent}' in parents"
         results = Manager.SERVICE.files().list(
             q=q,
-            pageSize=200,
+            pageSize=500,
             fields="nextPageToken, files(id, name, parents, webContentLink, size)"
         ).execute()
         files = results.get('files', None)
 
         return files
+
+    def create_file(self, parent, file):
+        """ Creates a file and stores in the appropriate drive """
+        if Manager.SERVICE is None:
+            return None
+        types = ['.pdf', '.doc', '.docx', '.png', '.jpg', '.jpeg', '.ppt']
+        mimetype = guess_type(file.filename)[0]
+        extension = guess_extension(mimetype, strict=False)
+        filename = file.filename
+        if extension:
+            if filename[len(filename) - len(extension):] != extension:
+                filename = filename + extension
+        file_metadata = {
+            'name': filename,
+            'parents': [parent]
+        }
+        file_media = MediaIoBaseUpload(file.stream, mimetype=mimetype)
+        try:
+            file = Manager.SERVICE.files().create(
+                body=file_metadata,
+                media_body=file_media,
+                fields='*'
+            ).execute()
+            Manager.SERVICE.permissions().create(
+                fileId=file.get('id'),
+                body={
+                    'role': 'reader',
+                    'type': 'anyone',
+                }
+            ).execute()
+        except Exception as e:
+            print(e)
+            return None
+        result = {
+            'download': file.get('webContentLink'),
+            'drive_id': file.get('id'),
+            'drive_name': file.get('name'),
+            'size': int(file.get('size')),
+            'parents': parent,
+        }
+        return result
+
+    def delete_book(self, drive_id: str):
+        """ Deletes the book data from the drive """
+        if Manager.SERVICE is None:
+            return None
+        try:
+            Manager.SERVICE.files().delete(fileId=drive_id).execute()
+        except Exception as e:
+            print(e)
+            return None
