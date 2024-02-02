@@ -21,7 +21,7 @@ from .serializers import (
 )
 
 
-# manager = Manager()  # Manages the file uploads
+manager = Manager()  # Manages the file uploads
 
 
 class Books(APIView):
@@ -77,14 +77,13 @@ class Books(APIView):
             parents.append(session.folder_id)
             parents.append(course.folder_id)
 
-        # PLACEHOLDER
-        # book = manager.create_file(parents[-1], request.FILES['book'])
-        book = {
-            'size': 10,
-            'download': 'https://github.com',
-            'drive_id': '179trfovh91o0h8f13',
-            'drive_name': 'HELLO MONKEY'
-        }
+        book = manager.create_file(parents[-1], request.FILES.get('book'))
+        # book = {
+        #     'size': 10,
+        #     'download': 'https://github.com',
+        #     'drive_id': '179trfovh91o0h8f13',
+        #     'drive_name': 'HELLO MONKEY'
+        # }
         book_data = {
             'level': int(level.name) if level.name != 'TXT' else 0,
             'size': book.get('size'),
@@ -300,11 +299,40 @@ class Folders(APIView):
     def post(self, request):
         """ Handles post requests """
         data = JSONParser().parse(request)
-        serializer = FolderSerializer(data=data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=201)
-        return Response(serializer.errors)
+        folders = data.get('parents')
+        college = Folder.objects.get(name=folders[0])
+        dept = Folder.objects.get(name=folders[1], parent=college.id)
+        level = Folder.objects.get(name=folders[2], parent=dept.id)
+        semester = Folder.objects.get(name=folders[3], parent=level.id)
+        # Check the session and course, and create as needed
+        try:
+            session = Folder.objects.get(name=folders[4], parent=semester.id)
+        except Folder.DoesNotExist:
+            session = manager.create_folder(folders[4], semester.folder_id)
+            result = Folder.objects.create(
+                name=session['name'],
+                folder_id=session['folder_id'],
+                parent=semester
+            )
+        try:
+            course = Folder.objects.get(name=folders[5], parent=session.id)
+        except KeyError:
+            pass
+        except Folder.DoesNotExist:
+            course = manager.create_folder(folders[5], parent=session.folder_id)
+            result = Folder.objects.create(
+                name=course['name'],
+                folder_id=course['folder_id'],
+                parent=session
+            )
+        return Response(
+            {
+                'id': result.id,
+                'name': result.name,
+                'folder_id': result.folder_id
+            },
+            status=201
+        )
 
 
 class FolderDetail(APIView):
@@ -346,14 +374,16 @@ class FolderDetail(APIView):
 #             tree[college.name] = {}
 #             for dept in college.children.all():
 #                 tree[college.name][dept.name] = {}
-#                 for level in dept.children.all():
-#                     tree[college.name][dept.name][level.name] = {}
-#                     for semester in level.children.all():
-#                         tree[college.name][dept.name][level.name][semester.name] = {}
-#                         for session in semester.children.all():
-#                             tree[college.name][dept.name][level.name][semester.name][session.name] = None
-#                             for course in session.children.all():
-#                                 tree[college.name][dept.name][level.name][semester.name][session.name] = course.name
+# for level in dept.children.all():
+# tree[college.name][dept.name][level.name] = {}
+# for semester in level.children.all():
+# tree[college.name][dept.name][level.name][semester.name] = {}
+# for session in semester.children.all():
+# tree[college.name][dept.name][level.name][semester.name][session.name] 
+# = None
+# for course in session.children.all():
+# tree[college.name][dept.name][level.name][semester.name][session.name] 
+# = course.name
 
 #         return Response(tree)
 

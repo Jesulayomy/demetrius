@@ -49,7 +49,16 @@ class Folder(models.Model):
     )
 
     def __str__(self):
-        return self.name
+        rep = f"{self.name}"
+        if self.parent:
+            rep += f" < {self.parent.name}"
+            if self.parent.parent:
+                rep += f" < {self.parent.parent.name}"
+                if self.parent.parent.parent:
+                    rep += f" < {self.parent.parent.parent.name}"
+                    if self.parent.parent.parent.parent:
+                        rep += f" < {self.parent.parent.parent.parent.name}"
+        return rep
 
 
 class Uploader(models.Model):
@@ -67,7 +76,7 @@ class Uploader(models.Model):
     )
 
     def __str__(self):
-        return self.username
+        return f"{self.username}"
 
 
 class Tag(models.Model):
@@ -91,7 +100,7 @@ class Tag(models.Model):
     )
 
     def __str__(self):
-        return self.name
+        return f"{self.name} > {self.full_name}"
 
 
 class Code(models.Model):
@@ -109,7 +118,7 @@ class Code(models.Model):
     )
 
     def __str__(self) -> str:
-        return self.code
+        return f"{self.code} | {self.course}"
 
 
 class Book(models.Model):
@@ -203,4 +212,4 @@ class Book(models.Model):
     )
 
     def __str__(self):
-        return self.title
+        return f"{self.title}"

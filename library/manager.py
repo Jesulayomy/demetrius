@@ -16,6 +16,7 @@ from googleapiclient.http import (
     MediaFileUpload,
     MediaIoBaseUpload,
 )
+from io import BytesIO
 from mimetypes import guess_type, guess_extension
 from uuid import uuid4
 
@@ -219,7 +220,10 @@ class Manager:
                                     parent=course.get('id')
                                 )
                                 for book in book_files:
-                                    if book.get('name') not in [book.title for book in Book.objects.all()]:
+                                    if (book.get('name') not in
+                                            [book.title
+                                                for book in
+                                                Book.objects.all()]):
                                         book_file = self.create_db_book(
                                             book, data,
                                             tag, code,
@@ -280,25 +284,57 @@ class Manager:
             Retrieves all the filesin teh directory given as parent.
         """
         q = "mimeType!='application/vnd.google-apps.folder'"
+        flds = "nextPageToken, files(id, name, parents, webContentLink, size)"
         if parent:
             q += f" and '{parent}' in parents"
         results = Manager.SERVICE.files().list(
             q=q,
             pageSize=500,
-            fields="nextPageToken, files(id, name, parents, webContentLink, size)"
+            fields=flds
         ).execute()
         files = results.get('files', None)
 
         return files
 
+    def create_folder(self, name, parent=None):
+        """ Creates a folder in the parent directory with te name provided """
+        if Manager.SERVICE is None:
+            return None
+        folder_metadata = {
+            'name': name,
+            'mimeType': 'application/vnd.google-apps.folder'
+        }
+        if parent:
+            folder_metadata['parents'] = [parent]
+        try:
+            folder = Manager.SERVICE.files().create(
+                body=folder_metadata,
+                fields='*'
+            ).execute()
+            Manager.SERVICE.permissions().create(
+                fileId=folder.get('id'),
+                body={
+                    'role': 'reader',
+                    'type': 'anyone',
+                }
+            ).execute()
+        except Exception as e:
+            print(e)
+            return None
+        result = {
+            'drive_id': folder.get('id'),
+            'drive_name': folder.get('name'),
+            'parents': parent,
+        }
+        return result
+
     def create_file(self, parent, file):
         """ Creates a file and stores in the appropriate drive """
         if Manager.SERVICE is None:
             return None
-        types = ['.pdf', '.doc', '.docx', '.png', '.jpg', '.jpeg', '.ppt']
-        mimetype = guess_type(file.filename)[0]
+        mimetype = guess_type(file._name)[0]
         extension = guess_extension(mimetype, strict=False)
-        filename = file.filename
+        filename = file._name
         if extension:
             if filename[len(filename) - len(extension):] != extension:
                 filename = filename + extension
@@ -306,7 +342,8 @@ class Manager:
             'name': filename,
             'parents': [parent]
         }
-        file_media = MediaIoBaseUpload(file.stream, mimetype=mimetype)
+        bytes_io = BytesIO(file.read())
+        file_media = MediaIoBaseUpload(bytes_io, mimetype=mimetype)
         try:
             file = Manager.SERVICE.files().create(
                 body=file_metadata,
