@@ -69,6 +69,40 @@ python manage.py migrate
 
 ```
 
+- Import data from Drive folder
+First authenticate your application with the Google Drive API by running the command: `python manage.py shell` , then import the drive data to mysql database
+
+```python
+>> from library.manager import Manager
+>> manager = Manager()
+https://accounts.google.com/o/oauth2/auth?response_type=code&client_id=
+. . .
+>> manager.build_db_tree_from_drive()
+COLENG:
+ DEPT: ELE
+  LEVEL: 100
+   SEM: 1ST
+     . . .
+Done!
+```
+
+- Create the superuser account with `python manage.py createsuperuser`
+
+- Finally, run the server with `python manage.py runserver`
+
+- The server will start running at `http://127.0.0.1:8000/`
+
+### Project Maintainers
+
+<table>
+  <tr>
+  <td align="center"><a href="https://github.com/Jesulayomy"><img src="https://avatars.githubusercontent.com/u/113533393?s=96&v=4" width="80px;" alt=""/><br /><sub><b>Jesulayomy</b></sub></a></td>
+
+  <td align="center"><a href="https://github.com/DevEmmy"><img src="https://avatars.githubusercontent.com/u/62223314?v=4" width="80px;" alt=""/><br /><sub><b>DevEmmy</b></sub></a></td>
+  </tr>
+</table>
+
+
 [^1]: Directory Structure
     ```
     COLLEGE
@@ -77,6 +111,9 @@ python manage.py migrate
     --|--|--|1ST
     --|--|--|--|2023
     --|--|--|--|--|COURSES
+    |__FILEA
+    |__FILEB
+    |__. . .
     --|--|--|2ND
     . . .
     --|--|200
