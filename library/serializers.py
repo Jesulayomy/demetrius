@@ -1,6 +1,12 @@
 from rest_framework import serializers
 
-from .models import Book, Code, Tag, Folder, Uploader
+from .models import (
+    Book,
+    Code,
+    Folder,
+    Tag,
+    Uploader,
+)
 
 
 class CodeSerializer(serializers.ModelSerializer):

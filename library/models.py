@@ -1,7 +1,7 @@
 """ Contains the models for the project """
 from datetime import datetime
-from django.db import models
 from django.core.exceptions import ValidationError
+from django.db import models
 
 
 LEVELS = {
@@ -23,7 +23,7 @@ def get_default_year() -> int:
     return DEFAULT_YEAR
 
 
-def session_validator(value: int):
+def session_validator(value: int) -> None:
     """ Validates the session value """
     if value < 1990 or value > datetime.now().year:
         raise ValidationError("Session must be between 1990 and current year")
@@ -47,6 +47,15 @@ class Folder(models.Model):
         related_name="children",
         help_text="The parent folder of this folder"
     )
+
+    class Meta:
+        ordering = [
+            'parent__parent__parent__parent__name',
+            'parent__parent__parent__name',
+            'parent__parent__name',
+            'parent__name',
+            'name'
+        ]
 
     def __str__(self):
         rep = f"{self.name}"
@@ -125,7 +134,9 @@ class Book(models.Model):
     """ Represents a book in the database """
     level = models.IntegerField(
         choices=LEVELS,
-        help_text="The level this book is required for, use 0 if more than one"
+        help_text="""
+            The level this book is required for, use 0 if more than one.
+        """
     )
 
     size = models.IntegerField(

@@ -250,7 +250,7 @@ class Manager:
             download=book.get('webContentLink'),
             size=book.get('size', 0),
             level=int(data['level_name']),
-            session=data.get('sesion_name', 2023),
+            session=data.get('session_name', 2023),
             uploader=uploader,
             tag=tag,
             code=code

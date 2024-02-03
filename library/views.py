@@ -1,8 +1,11 @@
 import json
 
 from django.db.models.functions import Lower
+from django.http import (
+    Http404,
+    HttpResponse,
+)
 from django.shortcuts import render
-from django.http import Http404, HttpResponse
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework import status
@@ -11,17 +14,23 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from .manager import Manager
-from .models import Book, Code, Tag, Folder, Uploader
+from .models import (
+    Book,
+    Code,
+    Folder,
+    Tag,
+    Uploader,
+)
 from .serializers import (
     BookSerializer,
     CodeSerializer,
-    UploaderSerializer,
+    FolderSerializer,
     TagSerializer,
-    FolderSerializer
+    UploaderSerializer,
 )
 
 
-manager = Manager()  # Manages the file uploads
+manager = Manager()  # Manages the file uploads with Drive V3 API
 
 
 class Books(APIView):
@@ -30,14 +39,20 @@ class Books(APIView):
     def get(self, request):
         """ Handles get requests """
         query_params = request.GET.dict()
-        params = ["level", "tag", "uploader", "code"]
+        params = ["level", "tag", "uploader", "code", "session", "title"]
         filters = {}
-        for parameter in params:
-            if parameter in query_params.keys():
-                if parameter == "level" or parameter == "uploader":
-                    filters[parameter] = int(query_params[parameter])
+        for param in params:
+            if param in query_params.keys():
+                if (
+                    param == "level" or
+                    param == "uploader" or
+                    param == "session"
+                ):
+                    filters[param] = int(query_params[param])
+                elif param == "title":
+                    filters["title__icontains"] = query_params[param]
                 else:
-                    filters[parameter] = query_params[parameter]
+                    filters[param] = query_params[param]
         books = Book.objects.filter(**filters).order_by(
             Lower("session").desc(),
             Lower("code").asc()
@@ -54,8 +69,14 @@ class Books(APIView):
             name=data.pop('college', 'COLENG'),
             parent=None
         )
-        dept = Folder.objects.get(name=data.get('tag'), parent=college.id)
-        level = Folder.objects.get(name=str(data.get('level')), parent=dept.id)
+        dept = Folder.objects.get(
+            name=data.get('tag'),
+            parent=college.id
+        )
+        level = Folder.objects.get(
+            name=str(data.get('level')),
+            parent=dept.id
+        )
         parents = [
             college.folder_id,
             dept.folder_id,
@@ -138,6 +159,7 @@ class BookDetail(APIView):
             book = Book.objects.get(pk=pk)
         except Book.DoesNotExist:
             return HttpResponse(status=404)
+        manager.delete_book(book.drive_id)
         book.delete()
         return Response({}, status=204)
 
@@ -306,20 +328,32 @@ class Folders(APIView):
         semester = Folder.objects.get(name=folders[3], parent=level.id)
         # Check the session and course, and create as needed
         try:
-            session = Folder.objects.get(name=folders[4], parent=semester.id)
+            session = Folder.objects.get(
+                name=folders[4],
+                parent=semester.id
+            )
         except Folder.DoesNotExist:
-            session = manager.create_folder(folders[4], semester.folder_id)
+            session = manager.create_folder(
+                folders[4],
+                semester.folder_id
+            )
             result = Folder.objects.create(
                 name=session['name'],
                 folder_id=session['folder_id'],
                 parent=semester
             )
         try:
-            course = Folder.objects.get(name=folders[5], parent=session.id)
+            course = Folder.objects.get(
+                name=folders[5],
+                parent=session.id
+            )
         except KeyError:
             pass
         except Folder.DoesNotExist:
-            course = manager.create_folder(folders[5], parent=session.folder_id)
+            course = manager.create_folder(
+                folders[5],
+                parent=session.folder_id
+            )
             result = Folder.objects.create(
                 name=course['name'],
                 folder_id=course['folder_id'],
@@ -329,7 +363,8 @@ class Folders(APIView):
             {
                 'id': result.id,
                 'name': result.name,
-                'folder_id': result.folder_id
+                'folder_id': result.folder_id,
+                'parent': result.parent
             },
             status=201
         )
@@ -379,10 +414,10 @@ class FolderDetail(APIView):
 # for semester in level.children.all():
 # tree[college.name][dept.name][level.name][semester.name] = {}
 # for session in semester.children.all():
-# tree[college.name][dept.name][level.name][semester.name][session.name] 
+# tree[college.name][dept.name][level.name][semester.name][session.name]
 # = None
 # for course in session.children.all():
-# tree[college.name][dept.name][level.name][semester.name][session.name] 
+# tree[college.name][dept.name][level.name][semester.name][session.name]
 # = course.name
 
 #         return Response(tree)
