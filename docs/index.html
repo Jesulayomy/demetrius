@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>Books</h1>
+        <div class="row mb-3 justify-content-around">
+            <div class="col-md-6">
+                <input type="text" id="searchInput" class="form-control" placeholder="Search by book title">
+            </div>
+            <div class="col-md-1.5" id="courseContainer">
+                <select id="courseFilter" class="form-control">
+                    <option value="">Course</option>
+                    <!-- Courses will be dynamically added -->
+                </select>
+            </div>
+            <div class="col-md-1.5">
+                <select id="lvlFilter" class="form-control">
+                    <option value="">Level</option>
+                    <option value="0">TXT</option>
+                    <option value="100">100</option>
+                    <option value="200">200</option>
+                    <option value="300">300</option>
+                    <option value="400">400</option>
+                    <option value="500">500</option>
+                </select>
+            </div>
+            <div class="col-md-1.5">
+                <select id="tagFilter" class="form-control">
+                    <option value="">Department</option>
+                    <option value="ABE">ABE</option>
+                    <option value="ELE">ELE</option>
+                    <option value="CVE">CVE</option>
+                    <option value="MCE">MCE</option>
+                    <option value="MTE">MTE</option>
+                </select>
+            </div>
+        </div>
+        <table id="booksTable" class="table">
+            <thead class="thead-dark">
+                <tr>
+                    <th>Title</th>
+                    <th>Code</th>
+                    <th>Tag</th>
+                    <th>Size</th>
+                    <th>Session</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Book items will be dynamically added here -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Bootstrap JS and jQuery -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            // Function to fetch books data from API
+            function fetchBooks() {
+                $.ajax({
+                    url: 'http://127.0.0.1:8000/library/books/',
+                    type: 'GET',
+                    success: function (response) {
+                        displayBooks(response);
+                    },
+                    error: function () {
+                        alert('Failed to fetch books data.');
+                    }
+                });
+            }
+
+            // Function to fetch course data from API
+            function fetchCourses() {
+                $.ajax({
+                    url: 'http://127.0.0.1:8000/library/codes/',
+                    type: 'GET',
+                    success: function (response) {
+                        displayCourses(response);
+                    },
+                    error: function () {
+                        alert('Failed to fetch Code data.');
+                    }
+                });
+            }
+
+            // Function to display books
+            function displayBooks(books) {
+                var tableBody = $('#booksTable tbody');
+                tableBody.empty(); // Clear previous data
+                function formatSize(bytes) {
+                    if (bytes >= 1024 * 1024) {
+                        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+                    } else {
+                        return (bytes / 1024).toFixed(1) + ' KB';
+                    }
+                }
+
+                books.forEach(function (book) {
+                    var row = '<tr>' +
+                        '<td><a href="' + book.download + '">' + book.title + '</a></td>' +
+                        '<td>' + book.code + '</td>' +
+                        '<td>' + book.tag + '</td>' +
+                        '<td>' + formatSize(book.size) + '</td>' +
+                        '<td>' + book.session + '</td>' +
+                        '</tr>';
+                    tableBody.append(row);
+                });
+            }
+
+            // Initial fetch and display of books
+            fetchBooks();
+            fetchCourses();
+
+            function displayCourses(courses) {
+                var optionBody = $('#courseContainer select');
+                optionBody.empty(); // Clear previous data
+                optionBody.append('<option value="">Course</option>');
+
+                courses.forEach(function (course) {
+                    var row = `<option value="${course.code}"">` + course.code + '</option>';
+                    optionBody.append(row);
+                });
+            }
+
+            // Event listener for course filter
+            $('#courseFilter').change(function () {
+                var selectedCourse = $(this).val();
+                if (selectedCourse === '') {
+                    fetchBooks(); // Fetch all books if no tag selected
+                } else {
+                    $.ajax({
+                        url: 'http://127.0.0.1:8000/library/books/?code=' + selectedCourse,
+                        type: 'GET',
+                        success: function (response) {
+                            displayBooks(response);
+                        },
+                        error: function () {
+                            alert('Failed to fetch books data.');
+                        }
+                    });
+                }
+            });
+
+            // Event listener for tag filter
+            $('#tagFilter').change(function () {
+                var selectedTag = $(this).val();
+                if (selectedTag === '') {
+                    fetchBooks(); // Fetch all books if no tag selected
+                } else {
+                    $.ajax({
+                        url: 'http://127.0.0.1:8000/library/books/?tag=' + selectedTag,
+                        type: 'GET',
+                        success: function (response) {
+                            displayBooks(response);
+                        },
+                        error: function () {
+                            alert('Failed to fetch books data.');
+                        }
+                    });
+                }
+            });
+
+            // Event listener for tag filter
+            $('#lvlFilter').change(function () {
+                var selectedLvl = $(this).val();
+                if (selectedLvl === '') {
+                    fetchBooks(); // Fetch all books if no tag selected
+                } else {
+                    $.ajax({
+                        url: 'http://127.0.0.1:8000/library/books/?level=' + selectedLvl,
+                        type: 'GET',
+                        success: function (response) {
+                            displayBooks(response);
+                        },
+                        error: function () {
+                            alert('Failed to fetch books data.');
+                        }
+                    });
+                }
+            });
+
+            // Event listener for book name search
+            $('#searchInput').keyup(function () {
+                var searchText = $(this).val().toLowerCase();
+                $.ajax({
+                    url: 'http://127.0.0.1:8000/library/books/?title=' + searchText,
+                    type: 'GET',
+                    success: function (response) {
+                        displayBooks(response);
+                    },
+                    error: function () {
+                        alert('Failed to fetch books data.');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

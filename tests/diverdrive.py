@@ -41,7 +41,7 @@ def main():
         service = build('drive', 'v3', credentials=creds)
         # Call the Drive v3 API
         results = service.files().list(
-            pageSize=50, fields="nextPageToken, files(kind, driveId, fileExtension, copyRequiresWriterPermission, md5Checksum, contentHints, writersCanShare, viewedByMe, mimeType, exportLinks, parents, thumbnailLink, iconLink, shared, lastModifyingUser, owners, headRevisionId, sharingUser, webViewLink, webContentLink, size, viewersCanCopyContent, permissions, hasThumbnail, spaces, folderColorRgb, id, name, description, starred, trashed, explicitlyTrashed, createdTime, modifiedTime, modifiedByMeTime, viewedByMeTime, sharedWithMeTime, quotaBytesUsed, version, originalFilename, ownedByMe, fullFileExtension, properties, appProperties, isAppAuthorized, teamDriveId, capabilities, hasAugmentedPermissions, trashingUser, thumbnailVersion, trashedTime, modifiedByMe, permissionIds, imageMediaMetadata, videoMediaMetadata, shortcutDetails, contentRestrictions, resourceKey, linkShareMetadata, labelInfo, sha1Checksum, sha256Checksum)").execute()
+            pageSize=50, fields="*").execute()
         items = results.get('files', [])
 
         print(items)

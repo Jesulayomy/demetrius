@@ -5,7 +5,6 @@ import random
 from library.models import Uploader, Code, Tag, Book
 
 
-
 TAGS = [
     'ABE', 'ELE', 'CVE', 'MCE', 'MTE', 'GEN', 'CSC', 'PHY', 'CHM', 'BIO',
 ]
