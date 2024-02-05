@@ -99,12 +99,6 @@ class Books(APIView):
             parents.append(course.folder_id)
 
         book = manager.create_file(parents[-1], request.FILES.get('book'))
-        # book = {
-        #     'size': 10,
-        #     'download': 'https://github.com',
-        #     'drive_id': '179trfovh91o0h8f13',
-        #     'drive_name': 'HELLO MONKEY'
-        # }
         book_data = {
             'level': int(level.name) if level.name != 'TXT' else 0,
             'size': book.get('size'),
@@ -217,6 +211,21 @@ class Codes(APIView):
 
     def get(self, request):
         """ Handles get requests """
+        query_params = request.GET.dict()
+        courses = []
+        if query_params.get("level") and query_params.get("tag"):
+            dept = Folder.objects.get(name=query_params.get('tag'))
+            level = Folder.objects.get(
+                name=query_params.get('level'),
+                parent=dept
+            )
+            for semester in level.children.all():
+                for session in semester.children.all():
+                    for course in session.children.all():
+                        courses.append(course.name)
+            codes = Code.objects.filter(code__in=courses)
+            serializer = CodeSerializer(codes, many=True)
+            return Response(serializer.data)
         codes = Code.objects.all()
         serializer = CodeSerializer(codes, many=True)
         return Response(serializer.data)
@@ -421,6 +430,33 @@ class FolderDetail(APIView):
 # = course.name
 
 #         return Response(tree)
+
+class CodeBooks(APIView):
+    """ View for displaying books through codes """
+    def get(self, request, pk):
+        """ Gets a dict of books with the code given"""
+        query_params = request.GET.dict()
+        params = [
+            "level", "title",
+            "uploader", "tag",
+            "session", "code"
+        ]
+        filters = {}
+        for param in params:
+            if param in query_params.keys():
+                if (
+                    param == "level" or
+                    param == "uploader" or
+                    param == "session"
+                ):
+                    filters[param] = int(query_params[param])
+                elif param == "title":
+                    filters["title__icontains"] = query_params[param]
+                else:
+                    filters[param] = query_params[param]
+        books = Code.objects.get(pk=pk).books.filter(**filters)
+        serializer = BookSerializer(books, many=True)
+        return Response(serializer.data)
 
 
 def view_data(request):

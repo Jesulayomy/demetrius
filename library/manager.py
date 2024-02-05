@@ -151,8 +151,10 @@ class Manager:
                         texts = self.get_files_details(parent=level.get('id'))
                         for text in texts:
                             self.create_db_book(
-                                text, data,
-                                gen_tag, None,
+                                text,
+                                data,
+                                tag or gen_tag,
+                                None,
                                 uploader
                             )
                         continue
