@@ -66,7 +66,7 @@
             // Function to fetch books data from API
             function fetchBooks() {
                 $.ajax({
-                    url: 'http://127.0.0.1:8000/library/books/',
+                    url: 'https://Jesulayomy.pythonanywhere.com/library/books/',
                     type: 'GET',
                     success: function (response) {
                         displayBooks(response);
@@ -80,7 +80,7 @@
             // Function to fetch course data from API
             function fetchCourses() {
                 $.ajax({
-                    url: 'http://127.0.0.1:8000/library/codes/',
+                    url: 'https://Jesulayomy.pythonanywhere.com/library/codes/',
                     type: 'GET',
                     success: function (response) {
                         displayCourses(response);
@@ -137,7 +137,7 @@
                     fetchBooks(); // Fetch all books if no tag selected
                 } else {
                     $.ajax({
-                        url: 'http://127.0.0.1:8000/library/books/?code=' + selectedCourse,
+                        url: 'https://Jesulayomy.pythonanywhere.com/library/books/?code=' + selectedCourse,
                         type: 'GET',
                         success: function (response) {
                             displayBooks(response);
@@ -156,7 +156,7 @@
                     fetchBooks(); // Fetch all books if no tag selected
                 } else {
                     $.ajax({
-                        url: 'http://127.0.0.1:8000/library/books/?tag=' + selectedTag,
+                        url: 'https://Jesulayomy.pythonanywhere.com/library/books/?tag=' + selectedTag,
                         type: 'GET',
                         success: function (response) {
                             displayBooks(response);
@@ -175,7 +175,7 @@
                     fetchBooks(); // Fetch all books if no tag selected
                 } else {
                     $.ajax({
-                        url: 'http://127.0.0.1:8000/library/books/?level=' + selectedLvl,
+                        url: 'https://Jesulayomy.pythonanywhere.com/library/books/?level=' + selectedLvl,
                         type: 'GET',
                         success: function (response) {
                             displayBooks(response);
@@ -191,7 +191,7 @@
             $('#searchInput').keyup(function () {
                 var searchText = $(this).val().toLowerCase();
                 $.ajax({
-                    url: 'http://127.0.0.1:8000/library/books/?title=' + searchText,
+                    url: 'https://Jesulayomy.pythonanywhere.com/library/books/?title=' + searchText,
                     type: 'GET',
                     success: function (response) {
                         displayBooks(response);
