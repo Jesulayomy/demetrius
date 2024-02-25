@@ -93,7 +93,7 @@ class Books(APIView):
                     level.folder_id
                 )
                 semester = Folder.objects.create(
-                    name=semester['name'],
+                    name=semester['drive_name'],
                     folder_id=semester['folder_id'],
                     parent=level
                 )
@@ -108,7 +108,7 @@ class Books(APIView):
                     semester.folder_id
                 )
                 session = Folder.objects.create(
-                    name=session['name'],
+                    name=session['drive_name'],
                     folder_id=session['folder_id'],
                     parent=semester
                 )
@@ -123,7 +123,7 @@ class Books(APIView):
                     session.folder_id
                 )
                 course = Folder.objects.create(
-                    name=course['name'],
+                    name=course['drive_name'],
                     folder_id=course['folder_id'],
                     parent=session
                 )
@@ -382,7 +382,7 @@ class Folders(APIView):
                 semester.folder_id
             )
             result = Folder.objects.create(
-                name=session['name'],
+                name=session['drive_name'],
                 folder_id=session['folder_id'],
                 parent=semester
             )
@@ -399,7 +399,7 @@ class Folders(APIView):
                 parent=session.folder_id
             )
             result = Folder.objects.create(
-                name=course['name'],
+                name=course['drive_name'],
                 folder_id=course['folder_id'],
                 parent=session
             )

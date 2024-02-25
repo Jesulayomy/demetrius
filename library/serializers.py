@@ -78,6 +78,9 @@ class BookSerializer(serializers.ModelSerializer):
         if created:
             user.email = user_data.get("email", None)
             user.save()
+        else:
+            user.email = user_data.get("email", user.email)
+            user.save()
         book = Book.objects.create(uploader=user, **validated_data)
         return book
 
