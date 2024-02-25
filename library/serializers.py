@@ -33,19 +33,23 @@ class FolderSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-class UploaderSerializer(serializers.ModelSerializer):
+class UploaderSerializer(serializers.Serializer):
     """ Serializer for Uploader model """
+    username =  serializers.CharField(max_length=64)
+    email = serializers.EmailField(max_length=255)
+    id = serializers.IntegerField(read_only=True)
 
     class Meta:
-        model = Uploader
-        fields = "__all__"
         extra_kwargs = {
             "id": {"read_only": True},
         }
 
     def create(self, validated_data):
         """ Creates a new user with the validated data """
-        user = Uploader.objects.create(**validated_data)
+        user, created = Uploader.objects.get_or_create(validated_data["username"])
+        if created:
+            user.email = validated_data.get("email", None)
+            user.save()
         return user
 
     def update(self, instance, validated_data):
@@ -70,7 +74,10 @@ class BookSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         """ Creates a new book with the validated data """
         user_data = validated_data.pop("uploader")
-        user, created = Uploader.objects.get_or_create(**user_data)
+        user, created = Uploader.objects.get_or_create(username=user_data["username"])
+        if created:
+            user.email = user_data.get("email", None)
+            user.save()
         book = Book.objects.create(uploader=user, **validated_data)
         return book
 
@@ -93,5 +100,16 @@ class BookSerializer(serializers.ModelSerializer):
         instance.download = validated_data.get("download", instance.download)
         instance.drive_id = validated_data.get("drive_id", instance.drive_id)
         instance.parents = validated_data.get("parents", instance.parents)
+        uploader = validated_data.get("uploader", None)
+        if uploader:
+            user, created = Uploader.objects.get_or_create(
+                username=uploader["username"]
+            )
+            if created:
+                user.email = uploader.get("email", None)
+            else:
+                user.email = uploader.get("email", user.email)
+            user.save()
+            instance.uploader = user
         instance.save()
         return instance

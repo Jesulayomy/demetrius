@@ -18,7 +18,10 @@ DEBUG = True
 
 ALLOWED_HOSTS = [
     'github.com',
+    'jesulayomy.pythonanywhere.com',
     'pythonanywhere.com',
+    'vercel.app',
+    'nuesafunaab.com.ng',
     '127.0.0.1',
     '0.0.0.0',
     '*'
@@ -111,6 +114,7 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 STATIC_URL = 'static/'
+# STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

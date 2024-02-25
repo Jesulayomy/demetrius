@@ -64,7 +64,6 @@ class Books(APIView):
     def post(self, request):
         """ Handles post requests """
         data = json.loads(request.data.get('data'))
-        file = request.FILES.get('book')
         college = Folder.objects.get(
             name=data.pop('college', 'COLENG'),
             parent=None
@@ -83,37 +82,73 @@ class Books(APIView):
             level.folder_id,
         ]
         if level.name != "TXT":
-            semester = Folder.objects.get(
-                name=data.get('semester'),
-                parent=level.id
-            )
-            session = Folder.objects.get(
-                name=str(data.get('session')),
-                parent=semester.id
-            )
-            course = Folder.objects.get(
-                name=data.get('code'),
-                parent=session.id
-            )
+            try:
+                semester = Folder.objects.get(
+                    name=data.get('semester'),
+                    parent=level.id
+                )
+            except Folder.DoesNotExist:
+                semester = manager.create_folder(
+                    data.get('semester'),
+                    level.folder_id
+                )
+                semester = Folder.objects.create(
+                    name=semester['name'],
+                    folder_id=semester['folder_id'],
+                    parent=level
+                )
+            try:
+                session = Folder.objects.get(
+                    name=data.get('session'),
+                    parent=semester.id
+                )
+            except Folder.DoesNotExist:
+                session = manager.create_folder(
+                    data.get('session'),
+                    semester.folder_id
+                )
+                session = Folder.objects.create(
+                    name=session['name'],
+                    folder_id=session['folder_id'],
+                    parent=semester
+                )
+            try:
+                course = Folder.objects.get(
+                    name=data.get('code'),
+                    parent=session.id
+                )
+            except Folder.DoesNotExist:
+                course = manager.create_folder(
+                    data.get('code'),
+                    session.folder_id
+                )
+                course = Folder.objects.create(
+                    name=course['name'],
+                    folder_id=course['folder_id'],
+                    parent=session
+                )
+            parents.append(semester.folder_id)
             parents.append(session.folder_id)
             parents.append(course.folder_id)
 
-        book = manager.create_file(parents[-1], request.FILES.get('book'))
+        book = manager.create_file(
+            parents[-1],
+            request.FILES.get('book')
+        )
         book_data = {
-            'level': int(level.name) if level.name != 'TXT' else 0,
-            'size': book.get('size'),
-            'tag': dept.name,
             'title': data.get('title', book['drive_name']),
-            'code': data.get('code', None),
-            'uploader': data.get('uploader'),
+            'description': data.get('description', None),
+            'tag': dept.name,
+            'level': int(level.name) if level.name != 'TXT' else 0,
             'session': data.get('session', None),
-            'description': data.get('description'),
-            'download': book.get('download'),
+            'code': data.get('code', None),
+            'size': book.get('size'),
             'drive_id': book.get('drive_id'),
+            'download': book.get('download'),
+            'uploader': data.get('uploader', {'username': 'Anonymous'}),
             'parents': parents,
         }
-        print(book_data)
-        serializer = BookSerializer(data=data)
+        serializer = BookSerializer(data=book_data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=201)
@@ -465,4 +500,10 @@ def view_data(request):
         Lower("session").desc(),
         Lower("code").asc()
     )
-    return render(request, "library/view.html", {"books": books})
+    courses = Code.objects.all().order_by(
+        Lower("code").asc()
+    )
+    return render(
+        request, "library/view.html",
+        {"books": books, "courses": courses}
+    )

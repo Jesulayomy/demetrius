@@ -9,12 +9,10 @@ from .views import (
     CodeBooks,
     Folders,
     FolderDetail,
-    # FolderTree,
     Tags,
     TagDetail,
     Uploaders,
     UploaderDetail,
-    view_data,
 )
 
 
@@ -68,12 +66,6 @@ urlpatterns = [
         'codes/<str:pk>/',
         CodeDetail.as_view(),
         name='code-detail'
-    ),
-    # path('tree/', FolderTree.as_view(), name='folder-tree'),
-    path(
-        'view/',
-        view_data,
-        name='view-data'
     ),
     path(
         'codes/<str:pk>/books/',

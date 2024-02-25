@@ -299,7 +299,7 @@ class Manager:
         return files
 
     def create_folder(self, name, parent=None):
-        """ Creates a folder in the parent directory with te name provided """
+        """ Creates a folder in the parent directory with the name provided """
         if Manager.SERVICE is None:
             return None
         folder_metadata = {
